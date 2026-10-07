@@ -1,0 +1,13 @@
+{
+  "domain": "compra_hub",
+  "name": "Compra Hub (raspimc)",
+  "codeowners": ["@ElPostilla"],
+  "config_flow": true,
+  "dependencies": ["http"],
+  "documentation": "https://github.com/ElPostilla/ha-compra-hub",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ElPostilla/ha-compra-hub/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

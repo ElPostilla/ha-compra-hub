@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conectar con el hub",
+        "description": "Elige el hub al que conectarte. Después se abrirá la página de inicio de sesión de compra.raspimc.org.",
+        "data": {
+          "hub": "Hub"
+        }
+      },
+      "pick_implementation": {
+        "title": "Elige cómo identificarte"
+      },
+      "reauth_confirm": {
+        "title": "Vuelve a iniciar sesión",
+        "description": "La sesión con {hub} ha caducado o se ha cerrado. Vuelve a iniciar sesión para seguir viendo tus listas, tareas y gastos."
+      }
+    },
+    "abort": {
+      "already_configured": "Esta cuenta ya está conectada a este hub.",
+      "reauth_successful": "Sesión renovada.",
+      "unique_id_mismatch": "Has iniciado sesión con otra cuenta. Usa la misma que conectaste al principio.",
+      "cannot_connect": "No se pudo conectar con el hub.",
+      "missing_configuration": "La integración no está configurada correctamente.",
+      "authorize_url_timeout": "Se agotó el tiempo al preparar el inicio de sesión.",
+      "no_url_available": "No hay una URL de Home Assistant disponible. Revisa la configuración de red de Home Assistant.",
+      "oauth_error": "El servidor de inicio de sesión devolvió datos no válidos.",
+      "oauth_timeout": "Se agotó el tiempo al obtener el token.",
+      "oauth_unauthorized": "El hub no ha aceptado la sesión.",
+      "oauth_failed": "Error al obtener el token.",
+      "user_rejected_authorize": "Se canceló el inicio de sesión."
+    },
+    "create_entry": {
+      "default": "Conectado al hub."
+    }
+  }
+}

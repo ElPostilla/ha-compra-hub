@@ -1,0 +1,22 @@
+name: Validar
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # Integración privada de un hub familiar: no está en home-assistant/brands.
+          ignore: brands
