@@ -13,7 +13,15 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .api import HubApi, HubAuthError, HubError
-from .const import DOMAIN, LOGGER, MEAL_SLOTS, PERSONAL, UPDATE_INTERVAL
+from .const import (
+    DEFAULT_PERSONAL_LIST,
+    DOMAIN,
+    LOGGER,
+    MEAL_SLOTS,
+    PERSONAL,
+    SINGLE_PERSONAL_KEY,
+    UPDATE_INTERVAL,
+)
 
 
 @dataclass
@@ -21,8 +29,10 @@ class HubData:
     """Foto del hub para una cuenta.
 
     Las claves de "scope" son PERSONAL o el id de un grupo. Las listas de la
-    compra van por clave propia: "p:<id de lista>" (personales, puede haber
-    varias) o "g:<id de grupo>" (una por grupo).
+    compra van por clave propia: "g:<id de grupo>" (una por grupo) y, las
+    personales, "p:" si hay una sola o ninguna todavía (list_id None: se
+    crea al añadir el primer producto, como hace la app al abrirla) o
+    "p:<id de lista>" si hay varias.
     """
 
     profile: dict[str, Any]
@@ -67,8 +77,19 @@ class CompraHubCoordinator(DataUpdateCoordinator[HubData]):
         )
         data = HubData(profile=profile, groups={g["id"]: g["name"] for g in groups})
 
-        for lst in personal_lists:
-            data.lists[f"p:{lst['id']}"] = {"name": lst["name"], "items": lst["items"], "group": None}
+        if len(personal_lists) <= 1:
+            lst = personal_lists[0] if personal_lists else None
+            data.lists[SINGLE_PERSONAL_KEY] = {
+                "name": lst["name"] if lst else DEFAULT_PERSONAL_LIST,
+                "items": lst["items"] if lst else [],
+                "group": None,
+                "list_id": lst["id"] if lst else None,
+            }
+        else:
+            for lst in personal_lists:
+                data.lists[f"p:{lst['id']}"] = {
+                    "name": lst["name"], "items": lst["items"], "group": None, "list_id": lst["id"]
+                }
 
         scopes: list[str | None] = [None, *data.groups]
         results = await asyncio.gather(
@@ -84,7 +105,9 @@ class CompraHubCoordinator(DataUpdateCoordinator[HubData]):
         meals = results[n_groups + 2 * n_scopes :]
 
         for gid, glist in zip(data.groups, group_lists, strict=True):
-            data.lists[f"g:{gid}"] = {"name": data.groups[gid], "items": glist["items"], "group": gid}
+            data.lists[f"g:{gid}"] = {
+                "name": data.groups[gid], "items": glist["items"], "group": gid, "list_id": glist["listId"]
+            }
         for scope, s_tasks, s_notes, s_meals in zip(scopes, tasks, notes, meals, strict=True):
             key = scope or PERSONAL
             data.tasks[key] = s_tasks
@@ -99,10 +122,12 @@ class CompraHubCoordinator(DataUpdateCoordinator[HubData]):
             e["amountCents"] for e in expenses if str(e.get("date", "")).startswith(month)
         )
 
-        # Si cambian los grupos (te unes a uno nuevo, sales de otro), las
-        # entidades se crean al cargar: se recarga la entrada para que
-        # aparezcan o desaparezcan.
-        if self.data is not None and set(self.data.groups) != set(data.groups):
-            LOGGER.info("Han cambiado los grupos del hub; recargando la integración")
+        # Si cambian los grupos (te unes a uno nuevo, sales de otro) o el
+        # número de listas personales, las entidades se crean al cargar: se
+        # recarga la entrada para que aparezcan o desaparezcan.
+        if self.data is not None and (
+            set(self.data.groups) != set(data.groups) or set(self.data.lists) != set(data.lists)
+        ):
+            LOGGER.info("Han cambiado los grupos o las listas del hub; recargando la integración")
             self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
         return data

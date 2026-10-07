@@ -101,20 +101,24 @@ class HubApi:
 
     # ------------------------------------------------- lista de la compra
 
-    def _items_path(self, list_key: str) -> str:
-        scope, ident = list_key.split(":", 1)
-        if scope == "g":
-            return f"/api/groups/{ident}/list/items"
-        return f"/api/personal/lists/{ident}/items"
+    # "lst" es la entrada de HubData.lists: {"group": id de grupo o None,
+    # "list_id": id de la lista personal}.
+    def _items_path(self, lst: dict[str, Any]) -> str:
+        if lst["group"]:
+            return f"/api/groups/{lst['group']}/list/items"
+        return f"/api/personal/lists/{lst['list_id']}/items"
 
-    async def add_item(self, list_key: str, name: str, qty: str | None) -> dict[str, Any]:
-        return await self.request("POST", self._items_path(list_key), {"name": name, "qty": qty})
+    async def create_personal_list(self, name: str) -> dict[str, Any]:
+        return await self.request("POST", "/api/personal/lists", {"name": name})
 
-    async def update_item(self, list_key: str, item_id: str, changes: dict[str, Any]) -> dict[str, Any]:
-        return await self.request("PATCH", f"{self._items_path(list_key)}/{item_id}", changes)
+    async def add_item(self, lst: dict[str, Any], name: str, qty: str | None) -> dict[str, Any]:
+        return await self.request("POST", self._items_path(lst), {"name": name, "qty": qty})
 
-    async def delete_item(self, list_key: str, item_id: str) -> None:
-        await self.request("DELETE", f"{self._items_path(list_key)}/{item_id}")
+    async def update_item(self, lst: dict[str, Any], item_id: str, changes: dict[str, Any]) -> dict[str, Any]:
+        return await self.request("PATCH", f"{self._items_path(lst)}/{item_id}", changes)
+
+    async def delete_item(self, lst: dict[str, Any], item_id: str) -> None:
+        await self.request("DELETE", f"{self._items_path(lst)}/{item_id}")
 
     # ----------------------------------------------------------- tareas
 

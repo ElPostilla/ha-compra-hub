@@ -14,7 +14,7 @@ from homeassistant.components.todo import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import PERSONAL
+from .const import DEFAULT_PERSONAL_LIST, PERSONAL, SINGLE_PERSONAL_KEY
 from .coordinator import CompraHubConfigEntry, CompraHubCoordinator
 from .entity import CompraHubEntity
 
@@ -55,10 +55,10 @@ class ShoppingListEntity(CompraHubEntity, TodoListEntity):
     def __init__(self, coordinator: CompraHubCoordinator, list_key: str) -> None:
         super().__init__(coordinator, "compra", f"lista:{list_key}")
         self._list_key = list_key
+        # La lista personal única (o la que aún no existe) no lleva nombre
+        # propio: la entidad es «Compra», que es como se la pide a Assist.
         lst = coordinator.data.lists[list_key]
-        personal = [k for k in coordinator.data.lists if k.startswith("p:")]
-        # Con una sola lista personal, sin nombre: la entidad es «Compra».
-        self._attr_name = None if not lst["group"] and len(personal) == 1 else lst["name"]
+        self._attr_name = None if list_key == SINGLE_PERSONAL_KEY else lst["name"]
 
     @property
     def available(self) -> bool:
@@ -88,8 +88,18 @@ class ShoppingListEntity(CompraHubEntity, TodoListEntity):
     def _rows(self) -> list[dict[str, Any]]:
         return self.coordinator.data.lists[self._list_key]["items"]
 
+    def _list(self) -> dict[str, Any]:
+        return self.coordinator.data.lists[self._list_key]
+
     async def async_create_todo_item(self, item: TodoItem) -> None:
-        saved = await self.coordinator.api.add_item(self._list_key, item.summary or "", item.description)
+        lst = self._list()
+        if not lst["group"] and lst["list_id"] is None:
+            # Cuenta que aún no ha abierto la lista de la compra: se crea la
+            # lista personal con el mismo nombre que le pondría la app.
+            created = await self.coordinator.api.create_personal_list(DEFAULT_PERSONAL_LIST)
+            lst["list_id"] = created["id"]
+            lst["name"] = created["name"]
+        saved = await self.coordinator.api.add_item(lst, item.summary or "", item.description)
         self._apply(_upsert(self._rows(), saved))
         await self.coordinator.async_request_refresh()
 
@@ -99,7 +109,7 @@ class ShoppingListEntity(CompraHubEntity, TodoListEntity):
             changes["name"] = item.summary
         # El hub no borra la cantidad con null (COALESCE): "" la deja vacía.
         changes["qty"] = item.description or ""
-        saved = await self.coordinator.api.update_item(self._list_key, item.uid or "", changes)
+        saved = await self.coordinator.api.update_item(self._list(), item.uid or "", changes)
         self._apply(_upsert(self._rows(), saved))
         await self.coordinator.async_request_refresh()
 
@@ -111,9 +121,9 @@ class ShoppingListEntity(CompraHubEntity, TodoListEntity):
         for uid in uids:
             row = rows.get(uid)
             if row and row.get("recurring") and row.get("done"):
-                rows[uid] = await self.coordinator.api.update_item(self._list_key, uid, {"done": False})
+                rows[uid] = await self.coordinator.api.update_item(self._list(), uid, {"done": False})
             else:
-                await self.coordinator.api.delete_item(self._list_key, uid)
+                await self.coordinator.api.delete_item(self._list(), uid)
                 rows.pop(uid, None)
         self._apply(list(rows.values()))
         await self.coordinator.async_request_refresh()

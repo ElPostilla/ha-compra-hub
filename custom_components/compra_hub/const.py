@@ -29,4 +29,10 @@ CONF_DEV_HUBS = {"compra-dev.raspimc.org"}
 UPDATE_INTERVAL = timedelta(seconds=60)
 
 PERSONAL = "personal"
+# Nombre de la lista personal que crea la app la primera vez (y la
+# integración si aún no hay ninguna al añadir el primer producto).
+DEFAULT_PERSONAL_LIST = "Mi lista"
+# Clave de la lista personal cuando solo hay una (o ninguna todavía): la
+# entidad «Compra» no cambia de identificador aunque la lista se cree después.
+SINGLE_PERSONAL_KEY = "p:"
 MEAL_SLOTS = ("comida", "cena")

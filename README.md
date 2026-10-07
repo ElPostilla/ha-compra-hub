@@ -8,7 +8,7 @@ Cada persona conecta su propia cuenta del hub y ve lo mismo que en la app: lo pe
 
 | Entidad | Qué hace |
 |---|---|
-| **Compra** y **Compra ‹grupo›** (listas de tareas) | Tu lista de la compra y la de cada grupo. Puedes añadir, tachar, renombrar y borrar productos. La cantidad va en la descripción. «Eliminar completados» desmarca los productos fijos (📌) en vez de borrarlos, igual que «Vaciar comprados» en la app. |
+| **Compra** y **Compra ‹grupo›** (listas de tareas) | Tu lista de la compra y la de cada grupo. «Compra» aparece siempre: si aún no has abierto la lista de la compra en la app, se crea «Mi lista» al añadir el primer producto. Si tienes varias listas personales, sale una por lista («Compra ‹lista›»). Puedes añadir, tachar, renombrar y borrar productos. La cantidad va en la descripción. «Eliminar completados» desmarca los productos fijos (📌) en vez de borrarlos, igual que «Vaciar comprados» en la app. |
 | **Tareas** y **Tareas ‹grupo›** (listas de tareas) | Añadir, completar o reabrir, poner fecha y borrar. «Haciendo» cuenta como pendiente. |
 | **Calendario** y **Calendario ‹grupo›** | Los recordatorios del hub, incluidos los que se repiten. Solo lectura. |
 | **Gastos Este mes** | Lo que llevas gastado este mes (gastos personales). |
