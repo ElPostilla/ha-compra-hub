@@ -18,5 +18,8 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # Integración privada de un hub familiar: no está en home-assistant/brands.
-          ignore: brands
+          # Repositorio personalizado de HACS, no de la tienda por defecto:
+          # - brands: no está en home-assistant/brands.
+          # - license: PolyForm Strict no es una licencia SPDX que GitHub
+          #   reconozca (NOASSERTION); es una decisión deliberada.
+          ignore: brands license
