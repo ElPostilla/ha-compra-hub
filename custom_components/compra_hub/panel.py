@@ -27,15 +27,22 @@ def _panel_path(hub: str) -> str:
     return "compra-hub-dev" if hub in CONF_DEV_HUBS else "compra-hub"
 
 
-async def async_add_panel(hass: HomeAssistant, entry_id: str, hub: str, version: str) -> None:
-    if not hass.data.get(DATA_STATIC):
-        # Las rutas estáticas no se pueden registrar dos veces en la misma
-        # ejecución de Home Assistant (ni siquiera tras recargar la entrada).
-        await hass.http.async_register_static_paths(
-            [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "www"), cache_headers=False)]
-        )
-        hass.data[DATA_STATIC] = True
+async def async_register_frontend(hass: HomeAssistant, version: str) -> None:
+    """Ficheros del panel y de la tarjeta; la tarjeta se carga en todos los paneles.
 
+    Una vez por ejecución de Home Assistant: las rutas estáticas no se
+    pueden registrar dos veces.
+    """
+    if hass.data.get(DATA_STATIC):
+        return
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "www"), cache_headers=False)]
+    )
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/card.js?v={version}")
+    hass.data[DATA_STATIC] = True
+
+
+async def async_add_panel(hass: HomeAssistant, entry_id: str, hub: str, version: str) -> None:
     path = _panel_path(hub)
     users = hass.data.setdefault(DATA_PANELS, {}).setdefault(path, set())
     if not users:

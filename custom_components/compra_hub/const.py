@@ -20,6 +20,12 @@ SCOPES = "openid offline_access"
 CONF_HUB = "hub"
 # Opción: mostrar el hub en la barra lateral (panel con iframe, ver panel.py).
 CONF_PANEL = "panel"
+# Opción: usuario de Home Assistant al que pertenece esta cuenta del hub. Lo
+# usan la voz, las acciones y la tarjeta para saber qué cuenta usar cuando
+# hay varias conectadas.
+CONF_HA_USER = "ha_user"
+
+CATEGORIES = ("comida", "casa", "ocio", "transporte", "salud", "otros")
 HUBS = {
     "compra.raspimc.org": "compra.raspimc.org",
     "compra-dev.raspimc.org": "compra-dev.raspimc.org (pruebas)",

@@ -1,0 +1,83 @@
+add_expense:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: compra_hub
+    description:
+      required: true
+      example: Súper
+      selector:
+        text:
+    amount:
+      required: true
+      example: 42.5
+      selector:
+        number:
+          min: 0.01
+          step: 0.01
+          mode: box
+          unit_of_measurement: "€"
+    category:
+      selector:
+        select:
+          translation_key: category
+          options: [comida, casa, ocio, transporte, salud, otros]
+    date:
+      selector:
+        date:
+    group:
+      example: Casa
+      selector:
+        text:
+    paid_by:
+      example: ana
+      selector:
+        text:
+    participants:
+      example: "ana, leo"
+      selector:
+        text:
+          multiple: true
+
+plan_meal:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: compra_hub
+    title:
+      required: true
+      example: Lentejas
+      selector:
+        text:
+    slot:
+      required: true
+      selector:
+        select:
+          translation_key: slot
+          options: [comida, cena]
+    date:
+      selector:
+        date:
+    group:
+      example: Casa
+      selector:
+        text:
+
+settle_debts:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: compra_hub
+    group:
+      required: true
+      example: Casa
+      selector:
+        text:
+    person:
+      required: true
+      example: leo
+      selector:
+        text:

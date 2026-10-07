@@ -13,6 +13,8 @@ from homeassistant.exceptions import (
     OAuth2TokenRequestReauthError,
 )
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.config_entry_oauth2_flow import (
     ImplementationUnavailableError,
     OAuth2Session,
@@ -21,12 +23,26 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
 from homeassistant.loader import async_get_integration
 
 from .api import HubApi
-from .const import CONF_HUB, CONF_PANEL
+from .const import CONF_HUB, CONF_PANEL, DOMAIN
 from .coordinator import CompraHubConfigEntry, CompraHubCoordinator
 from .oauth import async_ensure_implementation
-from .panel import async_add_panel, async_remove_panel
+from .panel import async_add_panel, async_register_frontend, async_remove_panel
+from .services import async_register_services
+from .voice import async_register_voice
+from .websocket import async_register_websocket
 
 PLATFORMS: list[Platform] = [Platform.CALENDAR, Platform.SENSOR, Platform.TODO]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Acciones y frases de voz: una vez para toda la integración, no por cuenta."""
+    async_register_services(hass)
+    async_register_voice(hass)
+    async_register_websocket(hass)
+    integration = await async_get_integration(hass, DOMAIN)
+    await async_register_frontend(hass, str(integration.version))
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CompraHubConfigEntry) -> bool:

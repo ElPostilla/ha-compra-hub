@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import MEAL_SLOTS, PERSONAL
 from .coordinator import CompraHubConfigEntry, CompraHubCoordinator
@@ -19,8 +22,9 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
-    entities: list[SensorEntity] = [MonthSpentSensor(coordinator)]
+    entities: list[SensorEntity] = [MonthSpentSensor(coordinator), TasksTodaySensor(coordinator)]
     entities += [BalanceSensor(coordinator, gid) for gid in coordinator.data.groups]
+    entities += [DebtsSensor(coordinator, gid) for gid in coordinator.data.groups]
     entities += [
         MealSensor(coordinator, scope, slot)
         for scope in coordinator.data.meals
@@ -92,3 +96,74 @@ class MealSensor(CompraHubEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         return self.coordinator.data.meals.get(self._scope, {}).get(self._slot) or "Sin planificar"
+
+
+def _euros(cents: int) -> str:
+    return f"{cents / 100:.2f}".replace(".", ",") + " €"
+
+
+class DebtsSensor(CompraHubEntity, SensorEntity):
+    """Quién debe a quién en un grupo: el estado es cuántas deudas quedan."""
+
+    _attr_icon = "mdi:account-cash-outline"
+    _attr_native_unit_of_measurement = "deudas"
+
+    def __init__(self, coordinator: CompraHubCoordinator, group_id: str) -> None:
+        super().__init__(coordinator, "gastos", f"deudas:{group_id}")
+        self._group_id = group_id
+        self._attr_name = f"Deudas {self.group_name(group_id)}"
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._group_id in self.coordinator.data.debts
+
+    @property
+    def native_value(self) -> int:
+        return len(self.coordinator.data.debts.get(self._group_id, []))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        debts = self.coordinator.data.debts.get(self._group_id, [])
+        return {
+            "resumen": [
+                f"@{d['fromUsername']} debe {_euros(d['amountCents'])} a @{d['toUsername']}" for d in debts
+            ],
+            "deudas": [
+                {"debe": d["fromUsername"], "a": d["toUsername"], "importe": d["amountCents"] / 100}
+                for d in debts
+            ],
+        }
+
+
+class TasksTodaySensor(CompraHubEntity, SensorEntity):
+    """Tareas que vencen hoy o van con retraso (personales y de grupos)."""
+
+    _attr_name = "Para hoy"
+    _attr_icon = "mdi:calendar-check-outline"
+    _attr_native_unit_of_measurement = "tareas"
+
+    def __init__(self, coordinator: CompraHubCoordinator) -> None:
+        super().__init__(coordinator, "tareas", "para_hoy")
+
+    def _due(self) -> list[dict[str, Any]]:
+        return self.coordinator.data.tasks_due(dt_util.now().date().isoformat())
+
+    @property
+    def native_value(self) -> int:
+        return len(self._due())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        today = dt_util.now().date().isoformat()
+        return {
+            "tareas": [
+                {
+                    "titulo": t["title"],
+                    "grupo": t["group"],
+                    "fecha": t["dueDate"],
+                    "atrasada": t["dueDate"] < today,
+                }
+                for t in self._due()
+            ]
+        }
+

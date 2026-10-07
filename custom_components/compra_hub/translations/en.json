@@ -38,10 +38,113 @@
     "step": {
       "init": {
         "title": "Compra Hub options",
-        "description": "The panel shows the hub inside Home Assistant. If Home Assistant is not on the same domain as the hub, use the panel's «Open in a window» button.",
+        "description": "**Home Assistant user:** who this hub account belongs to. With several accounts connected, voice, actions and the card use the account of whoever uses them.\n\n**Panel:** shows the hub inside Home Assistant. If Home Assistant is not on the same domain as the hub, use the panel's «Open in a window» button.",
         "data": {
-          "panel": "Show the hub in the sidebar"
+          "panel": "Show the hub in the sidebar",
+          "ha_user": "Home Assistant user"
         }
+      }
+    }
+  },
+  "services": {
+    "add_expense": {
+      "name": "Add an expense",
+      "description": "Adds an expense to the hub, personal or in a group.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Hub account. If omitted, the linked user's or the only one connected."
+        },
+        "description": {
+          "name": "Description",
+          "description": "What the expense was for."
+        },
+        "amount": {
+          "name": "Amount",
+          "description": "In euros."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Defaults to «otros»."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Defaults to today."
+        },
+        "group": {
+          "name": "Group",
+          "description": "Group name. Without a group, the expense is personal."
+        },
+        "paid_by": {
+          "name": "Paid by",
+          "description": "Hub user who paid (group only). Defaults to you."
+        },
+        "participants": {
+          "name": "Split between",
+          "description": "Hub users who owe their share (group only). Defaults to everyone."
+        }
+      }
+    },
+    "plan_meal": {
+      "name": "Plan a meal",
+      "description": "Puts a dish in the hub's menu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Hub account. If omitted, the linked user's or the only one connected."
+        },
+        "title": {
+          "name": "Dish",
+          "description": "What will be eaten."
+        },
+        "slot": {
+          "name": "Slot",
+          "description": "Lunch (comida) or dinner (cena)."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Defaults to today."
+        },
+        "group": {
+          "name": "Group",
+          "description": "Group name. Without a group, it goes to your personal menu."
+        }
+      }
+    },
+    "settle_debts": {
+      "name": "Settle debts",
+      "description": "Marks everything pending between your account and another person in a group as paid, both ways.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Hub account. If omitted, the linked user's or the only one connected."
+        },
+        "group": {
+          "name": "Group",
+          "description": "Group name."
+        },
+        "person": {
+          "name": "Person",
+          "description": "Hub user to settle with."
+        }
+      }
+    }
+  },
+  "selector": {
+    "category": {
+      "options": {
+        "comida": "Food",
+        "casa": "Home",
+        "ocio": "Leisure",
+        "transporte": "Transport",
+        "salud": "Health",
+        "otros": "Other"
+      }
+    },
+    "slot": {
+      "options": {
+        "comida": "Lunch",
+        "cena": "Dinner"
       }
     }
   }

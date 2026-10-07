@@ -10,7 +10,9 @@ Cada persona conecta su propia cuenta del hub y ve lo mismo que en la app: lo pe
 |---|---|
 | **Compra** y **Compra ‹grupo›** (listas de tareas) | Tu lista de la compra y la de cada grupo. «Compra» aparece siempre: si aún no has abierto la lista de la compra en la app, se crea «Mi lista» al añadir el primer producto. Si tienes varias listas personales, sale una por lista («Compra ‹lista›»). Puedes añadir, tachar, renombrar y borrar productos. La cantidad va en la descripción. «Eliminar completados» desmarca los productos fijos (📌) en vez de borrarlos, igual que «Vaciar comprados» en la app. |
 | **Tareas** y **Tareas ‹grupo›** (listas de tareas) | Añadir, completar o reabrir, poner fecha y borrar. «Haciendo» cuenta como pendiente. |
-| **Calendario** y **Calendario ‹grupo›** | Los recordatorios del hub, incluidos los que se repiten. Solo lectura. |
+| **Calendario** y **Calendario ‹grupo›** | Los recordatorios del hub, incluidos los que se repiten. Se pueden crear, cambiar y borrar desde Home Assistant (repetición diaria, semanal o mensual, como en la app). |
+| **Tareas Para hoy** | Cuántas tareas vencen hoy o van con retraso. El atributo `tareas` las lista. |
+| **Gastos Deudas ‹grupo›** | Cuántas deudas quedan en el grupo. Los atributos `resumen` y `deudas` dicen quién debe a quién. |
 | **Gastos Este mes** | Lo que llevas gastado este mes (gastos personales). |
 | **Gastos Saldo ‹grupo›** | Tu saldo en cada grupo: positivo, te deben; negativo, debes. El atributo `situacion` lo dice con palabras. |
 | **Menú Comida de hoy** y **Menú Cena de hoy** (y por grupo) | El plato planificado para hoy, o «Sin planificar». |
@@ -18,6 +20,31 @@ Cada persona conecta su propia cuenta del hub y ve lo mismo que en la app: lo pe
 | **Compra Hub** (panel en la barra lateral) | El hub completo dentro de Home Assistant, con un botón «Abrir en una ventana». Se puede ocultar en las opciones de la integración. |
 
 Los datos se actualizan cada minuto. Lo que cambias desde Home Assistant se ve al momento. Si entras o sales de un grupo, sus entidades aparecen o desaparecen solas.
+
+## Tarjeta para la pantalla principal
+
+La integración trae la tarjeta **Compra Hub**. Aparece sola en el selector de tarjetas al editar un panel, sin añadir recursos a mano. Tiene tres pestañas:
+
+- **Compra:** tus listas y las de tus grupos. Puedes añadir con cantidad, tachar y quitar los tachados, y se actualiza en directo.
+- **Hoy:** las tareas que vencen (se pueden completar desde aquí), los recordatorios del día y el menú de hoy.
+- **Gastos:** lo gastado este mes, tu saldo y quién debe a quién en cada grupo, y un formulario para apuntar un gasto.
+
+```yaml
+type: custom:compra-hub-card
+# Opcional:
+# tab: hoy          # pestaña inicial: compra, hoy o gastos
+# entry_id: …       # cuenta concreta; por defecto, la del usuario que mira el panel
+```
+
+## Acciones
+
+Para automatizaciones y scripts:
+
+- `compra_hub.add_expense`: apunta un gasto, personal o de un grupo. Admite quién pagó y entre quién se reparte.
+- `compra_hub.plan_meal`: pone un plato en el menú, la comida o la cena de un día.
+- `compra_hub.settle_debts`: marca como pagado todo lo pendiente entre tú y otra persona de un grupo.
+
+Las tres devuelven datos si se piden (`response_variable`). Si hay varias cuentas conectadas, usan la del usuario de Home Assistant vinculado en las opciones de la integración, o la que indiques con `config_entry_id`.
 
 ## Instalación
 
@@ -47,12 +74,24 @@ Por seguridad, el hub solo se deja mostrar dentro de otra web si esa web está e
 
 ## Voz (Assist)
 
-Funcionan frases como:
+**Listas:**
 
 - «añade leche a la lista compra»
 - «añade sal a la lista compra casa» (lista del grupo «Casa»)
 - «añade llamar al banco a la lista de tareas»
 - «quita leche de la lista compra»
+
+**Gastos, menú y cuentas:**
+
+- «apunta un gasto de 12,50 euros en el súper», «he gastado veinte con cincuenta en gasolina»
+- «apunta en casa un gasto de 30 euros en la compra» (a partes iguales en el grupo «Casa»)
+- «cuánto he gastado este mes»
+- «cuánto debo», «quién me debe», «quién debe a quién en casa»
+- «ya he pagado a ana en casa» (salda lo pendiente entre los dos)
+- «qué hay de cenar», «qué comemos mañana»
+- «pon lentejas para comer mañana», «pon tortilla para cenar hoy en casa»
+
+Los importes se entienden en cifras y en palabras. La categoría del gasto se deduce del concepto (súper → comida, gasolina → transporte…). Con varias cuentas conectadas, Assist usa la del usuario de Home Assistant que habla: vincúlalo en **Configurar** de la integración.
 
 **«…a la lista de la compra»** va siempre a la lista de la compra propia de Home Assistant, que viene activada de serie. Esa frase tiene prioridad y una integración no la puede cambiar. Si no usas esa lista, quita la integración «Lista de la compra» en Ajustes y la frase llegará a la del hub.
 

@@ -136,3 +136,44 @@ class HubApi:
 
     async def delete_task(self, group_id: str | None, task_id: str) -> None:
         await self.request("DELETE", f"{self._tasks_path(group_id)}/{task_id}")
+
+    # ----------------------------------------------------- recordatorios
+
+    def _notes_path(self, group_id: str | None) -> str:
+        return f"/api-calendario/groups/{group_id}/notes" if group_id else "/api-calendario/notes"
+
+    async def add_note(self, group_id: str | None, body: dict[str, Any]) -> dict[str, Any]:
+        return await self.request("POST", self._notes_path(group_id), body)
+
+    async def update_note(self, group_id: str | None, note_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return await self.request("PUT", f"{self._notes_path(group_id)}/{note_id}", body)
+
+    async def delete_note(self, group_id: str | None, note_id: str) -> None:
+        await self.request("DELETE", f"{self._notes_path(group_id)}/{note_id}")
+
+    # ------------------------------------------------------------ gastos
+
+    async def group_balance(self, group_id: str) -> dict[str, Any]:
+        """{"balances": [{userId, username, balanceCents}], "debts": [...]}"""
+        return await self.request("GET", f"/api-gastos/groups/{group_id}/balance")
+
+    async def group_expenses(self, group_id: str) -> list[dict[str, Any]]:
+        return (await self.request("GET", f"/api-gastos/groups/{group_id}/expenses"))["expenses"]
+
+    async def add_expense(self, group_id: str | None, body: dict[str, Any]) -> dict[str, Any]:
+        path = f"/api-gastos/groups/{group_id}/expenses" if group_id else "/api-gastos/expenses"
+        return await self.request("POST", path, body)
+
+    async def set_share_settled(self, group_id: str, expense_id: str, user_id: str, settled: bool) -> dict[str, Any]:
+        return await self.request(
+            "PATCH",
+            f"/api-gastos/groups/{group_id}/expenses/{expense_id}/shares/{user_id}",
+            {"settled": settled},
+        )
+
+    # -------------------------------------------------------------- menú
+
+    async def set_meal(self, group_id: str | None, date: str, slot: str, title: str) -> dict[str, Any]:
+        base = f"/api-menu/groups/{group_id}/meals" if group_id else "/api-menu/meals"
+        return await self.request("PUT", f"{base}/{date}/{slot}", {"title": title})
+

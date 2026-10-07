@@ -38,10 +38,113 @@
     "step": {
       "init": {
         "title": "Opciones de Compra Hub",
-        "description": "El panel muestra el hub dentro de Home Assistant. Si Home Assistant no está en el mismo dominio que el hub, usa el botón «Abrir en una ventana» del panel.",
+        "description": "**Usuario de Home Assistant:** a quién pertenece esta cuenta del hub. Con varias cuentas conectadas, la voz, las acciones y la tarjeta usan la del usuario que las usa.\n\n**Panel:** muestra el hub dentro de Home Assistant. Si Home Assistant no está en el mismo dominio que el hub, usa el botón «Abrir en una ventana» del panel.",
         "data": {
-          "panel": "Mostrar el hub en la barra lateral"
+          "panel": "Mostrar el hub en la barra lateral",
+          "ha_user": "Usuario de Home Assistant"
         }
+      }
+    }
+  },
+  "services": {
+    "add_expense": {
+      "name": "Apuntar un gasto",
+      "description": "Apunta un gasto en el hub, personal o de un grupo.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cuenta",
+          "description": "Cuenta del hub. Si no la indicas, la del usuario vinculado o la única conectada."
+        },
+        "description": {
+          "name": "Descripción",
+          "description": "En qué ha sido el gasto."
+        },
+        "amount": {
+          "name": "Importe",
+          "description": "En euros."
+        },
+        "category": {
+          "name": "Categoría",
+          "description": "Por defecto, «otros»."
+        },
+        "date": {
+          "name": "Fecha",
+          "description": "Por defecto, hoy."
+        },
+        "group": {
+          "name": "Grupo",
+          "description": "Nombre del grupo. Sin grupo, el gasto es personal."
+        },
+        "paid_by": {
+          "name": "Quién pagó",
+          "description": "Usuario del hub que pagó (solo en grupo). Por defecto, tú."
+        },
+        "participants": {
+          "name": "Entre quién se reparte",
+          "description": "Usuarios del hub que deben su parte (solo en grupo). Por defecto, todos."
+        }
+      }
+    },
+    "plan_meal": {
+      "name": "Planificar una comida",
+      "description": "Pone un plato en el menú del hub.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cuenta",
+          "description": "Cuenta del hub. Si no la indicas, la del usuario vinculado o la única conectada."
+        },
+        "title": {
+          "name": "Plato",
+          "description": "Qué se va a comer o cenar."
+        },
+        "slot": {
+          "name": "Franja",
+          "description": "Comida o cena."
+        },
+        "date": {
+          "name": "Fecha",
+          "description": "Por defecto, hoy."
+        },
+        "group": {
+          "name": "Grupo",
+          "description": "Nombre del grupo. Sin grupo, va a tu menú personal."
+        }
+      }
+    },
+    "settle_debts": {
+      "name": "Saldar deudas",
+      "description": "Marca como pagado todo lo pendiente entre tu cuenta y otra persona en un grupo, en los dos sentidos.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cuenta",
+          "description": "Cuenta del hub. Si no la indicas, la del usuario vinculado o la única conectada."
+        },
+        "group": {
+          "name": "Grupo",
+          "description": "Nombre del grupo."
+        },
+        "person": {
+          "name": "Persona",
+          "description": "Usuario del hub con quien saldar."
+        }
+      }
+    }
+  },
+  "selector": {
+    "category": {
+      "options": {
+        "comida": "Comida",
+        "casa": "Casa",
+        "ocio": "Ocio",
+        "transporte": "Transporte",
+        "salud": "Salud",
+        "otros": "Otros"
+      }
+    },
+    "slot": {
+      "options": {
+        "comida": "Comida",
+        "cena": "Cena"
       }
     }
   }

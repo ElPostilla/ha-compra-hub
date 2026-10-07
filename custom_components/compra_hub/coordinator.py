@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -43,6 +44,42 @@ class HubData:
     meals: dict[str, dict[str, str | None]] = field(default_factory=dict)
     balances: dict[str, int] = field(default_factory=dict)  # grupo -> céntimos
     month_spent_cents: int = 0
+    # Por grupo: miembros [{userId, username}] y deudas pendientes persona a
+    # persona [{fromUserId, fromUsername, toUserId, toUsername, amountCents}].
+    members: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    debts: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+
+    def tasks_due(self, today: str) -> list[dict[str, Any]]:
+        """Tareas sin terminar que vencen hoy o están atrasadas, de todos los ámbitos."""
+        due = []
+        for scope, tasks in self.tasks.items():
+            for t in tasks:
+                if t["status"] != "done" and t.get("dueDate") and t["dueDate"] <= today:
+                    due.append({**t, "scope": scope, "group": self.groups.get(scope)})
+        return sorted(due, key=lambda t: t["dueDate"])
+
+    def find_group(self, name: str) -> str | None:
+        """Id del grupo por nombre, sin distinguir mayúsculas ni tildes."""
+        wanted = _fold(name)
+        exact = [gid for gid, n in self.groups.items() if _fold(n) == wanted]
+        if exact:
+            return exact[0]
+        partial = [gid for gid, n in self.groups.items() if wanted and wanted in _fold(n)]
+        return partial[0] if len(partial) == 1 else None
+
+    def find_member(self, group_id: str, name: str) -> dict[str, Any] | None:
+        wanted = _fold(name).lstrip("@")
+        for m in self.members.get(group_id, []):
+            if _fold(m["username"]) == wanted:
+                return m
+        return None
+
+
+def _fold(text: str) -> str:
+    """Minúsculas y sin tildes, para comparar nombres dichos en voz alta."""
+    return "".join(
+        c for c in unicodedata.normalize("NFD", str(text).strip().lower()) if unicodedata.category(c) != "Mn"
+    )
 
 
 type CompraHubConfigEntry = ConfigEntry[CompraHubCoordinator]
@@ -97,12 +134,17 @@ class CompraHubCoordinator(DataUpdateCoordinator[HubData]):
             *(api.tasks(s) for s in scopes),
             *(api.notes(s) for s in scopes),
             *(api.meals(s, today, today) for s in scopes),
+            *(api.group_balance(gid) for gid in data.groups),
         )
         n_groups, n_scopes = len(data.groups), len(scopes)
         group_lists = results[:n_groups]
         tasks = results[n_groups : n_groups + n_scopes]
         notes = results[n_groups + n_scopes : n_groups + 2 * n_scopes]
-        meals = results[n_groups + 2 * n_scopes :]
+        meals = results[n_groups + 2 * n_scopes : n_groups + 3 * n_scopes]
+        group_balances = results[n_groups + 3 * n_scopes :]
+        for gid, gb in zip(data.groups, group_balances, strict=True):
+            data.members[gid] = [{"userId": b["userId"], "username": b["username"]} for b in gb["balances"]]
+            data.debts[gid] = gb.get("debts", [])
 
         for gid, glist in zip(data.groups, group_lists, strict=True):
             data.lists[f"g:{gid}"] = {

@@ -14,7 +14,7 @@ from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import HubApi, HubAuthError, HubError
-from .const import CONF_HUB, CONF_PANEL, DEFAULT_HUB, DOMAIN, HUBS, LOGGER
+from .const import CONF_HA_USER, CONF_HUB, CONF_PANEL, DEFAULT_HUB, DOMAIN, HUBS, LOGGER
 from .oauth import async_ensure_implementation
 
 
@@ -92,19 +92,33 @@ class CompraHubFlowHandler(
         )
 
 
+NO_USER = "-"
+
+
 class CompraHubOptionsFlow(OptionsFlow):
-    """Opciones: mostrar o no el hub en la barra lateral."""
+    """Opciones: panel en la barra lateral y usuario de HA al que pertenece la cuenta."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            data = dict(user_input)
+            if data.get(CONF_HA_USER) == NO_USER:
+                data.pop(CONF_HA_USER)
+            return self.async_create_entry(data=data)
+        users = {NO_USER: "Nadie en concreto"}
+        users.update(
+            {
+                u.id: u.name or u.id
+                for u in await self.hass.auth.async_get_users()
+                if not u.system_generated and u.is_active
+            }
+        )
+        options = self.config_entry.options
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
-                        CONF_PANEL, default=self.config_entry.options.get(CONF_PANEL, True)
-                    ): bool
+                    vol.Required(CONF_PANEL, default=options.get(CONF_PANEL, True)): bool,
+                    vol.Required(CONF_HA_USER, default=options.get(CONF_HA_USER, NO_USER)): vol.In(users),
                 }
             ),
         )
