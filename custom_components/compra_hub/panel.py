@@ -10,6 +10,7 @@ eso el panel lleva siempre «Abrir en una ventana».
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from homeassistant.components import frontend, panel_custom
@@ -19,6 +20,14 @@ from homeassistant.core import HomeAssistant
 from .const import CONF_DEV_HUBS, DOMAIN
 
 STATIC_URL = "/compra_hub_static"
+WWW = Path(__file__).parent / "www"
+
+
+def _fingerprint(name: str) -> str:
+    """Huella del contenido: Home Assistant sirve estos ficheros sin
+    Cache-Control y el navegador puede seguir usando una copia vieja si la URL
+    no cambia (pasó con la 0.3.0: la tarjeta corregida no llegaba)."""
+    return hashlib.sha256((WWW / name).read_bytes()).hexdigest()[:12]
 DATA_STATIC = f"{DOMAIN}_static_registered"
 DATA_PANELS = f"{DOMAIN}_panels"  # frontend_url_path -> ids de entrada
 
@@ -36,9 +45,10 @@ async def async_register_frontend(hass: HomeAssistant, version: str) -> None:
     if hass.data.get(DATA_STATIC):
         return
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "www"), cache_headers=False)]
+        [StaticPathConfig(STATIC_URL, str(WWW), cache_headers=False)]
     )
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/card.js?v={version}")
+    card = await hass.async_add_executor_job(_fingerprint, "card.js")
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/card.js?v={card}")
     hass.data[DATA_STATIC] = True
 
 
@@ -52,7 +62,7 @@ async def async_add_panel(hass: HomeAssistant, entry_id: str, hub: str, version:
             webcomponent_name="compra-hub-panel",
             sidebar_title="Compra Hub dev" if hub in CONF_DEV_HUBS else "Compra Hub",
             sidebar_icon="mdi:basket-outline",
-            module_url=f"{STATIC_URL}/panel.js?v={version}",
+            module_url=f"{STATIC_URL}/panel.js?v={await hass.async_add_executor_job(_fingerprint, 'panel.js')}",
             config={"url": f"https://{hub}/", "hub": hub},
             require_admin=False,
         )
