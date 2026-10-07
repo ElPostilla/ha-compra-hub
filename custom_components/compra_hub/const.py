@@ -18,6 +18,8 @@ TOKEN_URL = f"{OIDC_BASE}/token"
 SCOPES = "openid offline_access"
 
 CONF_HUB = "hub"
+# Opción: mostrar el hub en la barra lateral (panel con iframe, ver panel.py).
+CONF_PANEL = "panel"
 HUBS = {
     "compra.raspimc.org": "compra.raspimc.org",
     "compra-dev.raspimc.org": "compra-dev.raspimc.org (pruebas)",

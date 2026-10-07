@@ -8,12 +8,13 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntry, ConfigFlowResult, OptionsFlow
+from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import HubApi, HubAuthError, HubError
-from .const import CONF_HUB, DEFAULT_HUB, DOMAIN, HUBS, LOGGER
+from .const import CONF_HUB, CONF_PANEL, DEFAULT_HUB, DOMAIN, HUBS, LOGGER
 from .oauth import async_ensure_implementation
 
 
@@ -32,6 +33,11 @@ class CompraHubFlowHandler(
     @property
     def logger(self) -> logging.Logger:
         return LOGGER
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        return CompraHubOptionsFlow()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is None:
@@ -83,4 +89,22 @@ class CompraHubFlowHandler(
         return self.async_create_entry(
             title=f"@{profile['username']} · {self._hub}",
             data={**data, CONF_HUB: self._hub},
+        )
+
+
+class CompraHubOptionsFlow(OptionsFlow):
+    """Opciones: mostrar o no el hub en la barra lateral."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_PANEL, default=self.config_entry.options.get(CONF_PANEL, True)
+                    ): bool
+                }
+            ),
         )

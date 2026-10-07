@@ -33,5 +33,16 @@
     "create_entry": {
       "default": "Connected to the hub."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Compra Hub options",
+        "description": "The panel shows the hub inside Home Assistant. If Home Assistant is not on the same domain as the hub, use the panel's «Open in a window» button.",
+        "data": {
+          "panel": "Show the hub in the sidebar"
+        }
+      }
+    }
   }
 }

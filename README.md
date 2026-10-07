@@ -15,6 +15,8 @@ Cada persona conecta su propia cuenta del hub y ve lo mismo que en la app: lo pe
 | **Gastos Saldo ‹grupo›** | Tu saldo en cada grupo: positivo, te deben; negativo, debes. El atributo `situacion` lo dice con palabras. |
 | **Menú Comida de hoy** y **Menú Cena de hoy** (y por grupo) | El plato planificado para hoy, o «Sin planificar». |
 
+| **Compra Hub** (panel en la barra lateral) | El hub completo dentro de Home Assistant, con un botón «Abrir en una ventana». Se puede ocultar en las opciones de la integración. |
+
 Los datos se actualizan cada minuto. Lo que cambias desde Home Assistant se ve al momento. Si entras o sales de un grupo, sus entidades aparecen o desaparecen solas.
 
 ## Instalación
@@ -36,6 +38,12 @@ Copia `custom_components/compra_hub` en la carpeta `custom_components` de tu con
 3. Inicia sesión con tu cuenta del hub. Al volver, la página de **my.home-assistant.io** te pide una vez la dirección de tu Home Assistant: escríbela y continúa.
 
 No hace falta crear credenciales ni copiar claves. Home Assistant renueva solo la sesión, que no caduca mientras se use al menos una vez cada 30 días. Si cierras la sesión desde tu cuenta del hub, Home Assistant te pedirá volver a entrar.
+
+## El hub dentro de Home Assistant
+
+La integración añade a la barra lateral el panel **Compra Hub**, con la app del hub dentro. La sesión es la del propio hub, independiente de la de Home Assistant: la primera vez inicias sesión dentro del panel.
+
+Por seguridad, el hub solo se deja mostrar dentro de otra web si esa web está en su mismo dominio y su servidor de inicio de sesión la tiene permitida. Hoy está permitida `homeassistant.raspimc.org`. En cualquier otro Home Assistant, el panel puede quedarse en blanco o pedir la sesión una y otra vez, sobre todo en el iPhone, que bloquea las cookies de otros dominios dentro de una página. En ese caso, usa el botón **Abrir en una ventana** del propio panel, que abre el hub aparte (en la app del móvil, en su navegador integrado). Si no quieres el panel, desactívalo en **Ajustes → Dispositivos y servicios → Compra Hub → Configurar**.
 
 ## Voz (Assist)
 
