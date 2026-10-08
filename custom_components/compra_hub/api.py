@@ -14,6 +14,8 @@ import aiohttp
 
 from homeassistant.helpers.config_entry_oauth2_flow import OAuth2Session
 
+from .categories import detect_category
+
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=20)
 
 
@@ -112,7 +114,9 @@ class HubApi:
         return await self.request("POST", "/api/personal/lists", {"name": name})
 
     async def add_item(self, lst: dict[str, Any], name: str, qty: str | None) -> dict[str, Any]:
-        return await self.request("POST", self._items_path(lst), {"name": name, "qty": qty})
+        # Como la app: el pasillo se deduce del nombre al añadirlo.
+        body = {"name": name, "qty": qty, "category": detect_category(name)}
+        return await self.request("POST", self._items_path(lst), body)
 
     async def update_item(self, lst: dict[str, Any], item_id: str, changes: dict[str, Any]) -> dict[str, Any]:
         return await self.request("PATCH", f"{self._items_path(lst)}/{item_id}", changes)

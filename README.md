@@ -8,7 +8,7 @@ Cada persona conecta su propia cuenta del hub y ve lo mismo que en la app: lo pe
 
 | Entidad | Qué hace |
 |---|---|
-| **Compra** y **Compra ‹grupo›** (listas de tareas) | Tu lista de la compra y la de cada grupo. «Compra» aparece siempre: si aún no has abierto la lista de la compra en la app, se crea «Mi lista» al añadir el primer producto. Si tienes varias listas personales, sale una por lista («Compra ‹lista›»). Puedes añadir, tachar, renombrar y borrar productos. La cantidad va en la descripción. «Eliminar completados» desmarca los productos fijos (📌) en vez de borrarlos, igual que «Vaciar comprados» en la app. |
+| **Compra** y **Compra ‹grupo›** (listas de tareas) | Tu lista de la compra y la de cada grupo. «Compra» aparece siempre: si aún no has abierto la lista de la compra en la app, se crea «Mi lista» al añadir el primer producto. Si tienes varias listas personales, sale una por lista («Compra ‹lista›»). Puedes añadir, tachar, renombrar y borrar productos. La cantidad va en la descripción. Lo que añades desde Home Assistant (tarjeta, voz o automatizaciones) va a su pasillo, igual que en la app: la leche a «Lácteos y huevos», los plátanos a «Frutas y verduras». «Eliminar completados» desmarca los productos fijos (📌) en vez de borrarlos, igual que «Vaciar comprados» en la app. |
 | **Tareas** y **Tareas ‹grupo›** (listas de tareas) | Añadir, completar o reabrir, poner fecha y borrar. «Haciendo» cuenta como pendiente. |
 | **Calendario** y **Calendario ‹grupo›** | Los recordatorios del hub, incluidos los que se repiten. Se pueden crear, cambiar y borrar desde Home Assistant (repetición diaria, semanal o mensual, como en la app). |
 | **Tareas Para hoy** | Cuántas tareas vencen hoy o van con retraso. El atributo `tareas` las lista. |
@@ -16,25 +16,73 @@ Cada persona conecta su propia cuenta del hub y ve lo mismo que en la app: lo pe
 | **Gastos Este mes** | Lo que llevas gastado este mes (gastos personales). |
 | **Gastos Saldo ‹grupo›** | Tu saldo en cada grupo: positivo, te deben; negativo, debes. El atributo `situacion` lo dice con palabras. |
 | **Menú Comida de hoy** y **Menú Cena de hoy** (y por grupo) | El plato planificado para hoy, o «Sin planificar». |
-
 | **Compra Hub** (panel en la barra lateral) | El hub completo dentro de Home Assistant, con un botón «Abrir en una ventana». Se puede ocultar en las opciones de la integración. |
 
 Los datos se actualizan cada minuto. Lo que cambias desde Home Assistant se ve al momento. Si entras o sales de un grupo, sus entidades aparecen o desaparecen solas.
 
-## Tarjeta para la pantalla principal
+## Tarjeta
 
-La integración trae la tarjeta **Compra Hub**. Aparece sola en el selector de tarjetas al editar un panel, sin añadir recursos a mano. Tiene tres pestañas:
+La integración trae la tarjeta **Compra Hub**. Aparece sola en el selector de tarjetas al editar un panel, sin añadir recursos a mano. Tiene tres partes:
 
-- **Compra:** tus listas y las de tus grupos. Puedes añadir con cantidad, tachar y quitar los tachados, y se actualiza en directo.
-- **Hoy:** las tareas que vencen (se pueden completar desde aquí), los recordatorios del día y el menú de hoy.
+- **Compra:** tus listas y las de tus grupos, ordenadas por pasillos como en la app (los fijos llevan una chincheta). Añadir con cantidad, tachar tocando el producto y quitar los comprados. Se actualiza en directo.
+- **Hoy:** las tareas que vencen hoy o van con retraso (se completan tocándolas), un campo para apuntar una tarea para hoy, la agenda y el menú de hoy.
 - **Gastos:** lo gastado este mes, tu saldo y quién debe a quién en cada grupo, y un formulario para apuntar un gasto.
+
+Sin `section`, las tres van en una sola tarjeta con pestañas. Con `section`, la tarjeta muestra solo esa parte, sin pestañas, con su propia cabecera y botones grandes para el dedo: es la forma de tenerlo todo a la vista a la vez en una tablet.
 
 ```yaml
 type: custom:compra-hub-card
 # Opcional:
-# tab: hoy          # pestaña inicial: compra, hoy o gastos
-# entry_id: …       # cuenta concreta; por defecto, la del usuario que mira el panel
+# section: compra    # solo una parte, sin pestañas: compra, hoy o gastos
+# tab: hoy           # con pestañas, la que se abre primero
+# list: todo.compra_casa  # lista que se ve al abrir (si no, la última elegida en ese dispositivo)
+# days: 2            # en Hoy, días de agenda (hoy y mañana); 1 por defecto
+# max_height: calc(100dvh - 250px)  # alto máximo del contenido; lo que no cabe se desplaza dentro
+# entry_id: …        # cuenta concreta; por defecto, la del usuario que mira el panel
 ```
+
+## Una tablet en la cocina (modo kiosko)
+
+Con tres tarjetas sueltas se monta un panel para una tablet fija: la compra a la izquierda, a la derecha lo de hoy y los gastos, y arriba la hora y el tiempo. Así se maneja el hub sin abrir la app ni cambiar de pestaña.
+
+```yaml
+views:
+  - title: Cocina
+    path: inicio
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: clock
+            clock_size: medium
+            grid_options: {columns: 8, rows: 1}   # una sección de dos columnas tiene 24
+          - type: tile
+            entity: weather.forecast_casa
+            state_content: [state, temperature]
+            grid_options: {columns: 16, rows: 1}
+      - type: grid
+        cards:
+          - type: custom:compra-hub-card
+            section: compra
+            max_height: calc(100dvh - 250px)
+            grid_options: {columns: full}
+      - type: grid
+        cards:
+          - {type: custom:compra-hub-card, section: hoy, days: 2, grid_options: {columns: full}}
+          - {type: custom:compra-hub-card, section: gastos, grid_options: {columns: full}}
+```
+
+Para quitar la barra superior y la lateral, instala [kiosk-mode](https://github.com/NemesisRE/kiosk-mode) y añade al principio del panel:
+
+```yaml
+kiosk_mode:
+  non_admin_settings:
+    kiosk: true      # la tablet entra con un usuario que no es administrador
+```
+
+En la tablet, inicia sesión con ese usuario y elige el panel como predeterminado en tu perfil. En un iPad, la app de Home Assistant con **Acceso guiado** (Ajustes → Accesibilidad) impide salir de ella; en Android, Fully Kiosk Browser hace lo mismo.
 
 ## Acciones
 
@@ -93,7 +141,7 @@ Por seguridad, el hub solo se deja mostrar dentro de otra web si esa web está e
 
 Los importes se entienden en cifras y en palabras. La categoría del gasto se deduce del concepto (súper → comida, gasolina → transporte…). Con varias cuentas conectadas, Assist usa la del usuario de Home Assistant que habla: vincúlalo en **Configurar** de la integración.
 
-**«…a la lista de la compra»** va siempre a la lista de la compra propia de Home Assistant, que viene activada de serie. Esa frase tiene prioridad y una integración no la puede cambiar. Si no usas esa lista, quita la integración «Lista de la compra» en Ajustes y la frase llegará a la del hub.
+**«…a la lista de la compra»** va a la lista de la compra propia de Home Assistant, que viene activada de serie, y una integración no puede quedarse esa frase. Para que llegue al hub: quita la integración «Lista de la compra» en **Ajustes → Dispositivos y servicios** y ponle a tu lista del hub el alias **compra** (la entidad → ⚙ → Alias de voz). Desde ese momento, «añade leche a la lista de la compra» la apunta en el hub.
 
 ## Privacidad
 

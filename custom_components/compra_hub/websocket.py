@@ -1,4 +1,5 @@
-"""Comando WebSocket para la tarjeta: qué entidades son de qué cuenta."""
+"""Comandos WebSocket para la tarjeta: qué entidades son de qué cuenta y el
+detalle de una lista de la compra (pasillo y fijados, que la entidad todo no da)."""
 
 from __future__ import annotations
 
@@ -12,12 +13,13 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
 from . import actions
-from .const import CONF_HUB, PERSONAL
+from .const import CONF_HUB, DOMAIN, PERSONAL
 
 
 @callback
 def async_register_websocket(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_info)
+    websocket_api.async_register_command(hass, ws_list)
 
 
 @websocket_api.websocket_command(
@@ -82,6 +84,39 @@ def ws_info(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
             "balances": [
                 {"group": name, "group_id": gid, "balance": by_key.get(f"saldo:{gid}"), "debts": by_key.get(f"deudas:{gid}")}
                 for gid, name in data.groups.items()
+            ],
+        },
+    )
+
+
+@websocket_api.websocket_command({vol.Required("type"): "compra_hub/list", vol.Required("entity_id"): str})
+@callback
+def ws_list(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Productos de una lista con su pasillo (category) y si están fijados (recurring)."""
+    reg_entry = er.async_get(hass).async_get(msg["entity_id"])
+    entry = hass.config_entries.async_get_entry(reg_entry.config_entry_id) if reg_entry else None
+    prefix = f"{entry.unique_id}:lista:" if entry and entry.domain == DOMAIN else None
+    if not prefix or not reg_entry.unique_id.startswith(prefix) or not hasattr(entry, "runtime_data"):
+        connection.send_error(msg["id"], "not_found", "Esa entidad no es una lista de la compra del hub.")
+        return
+    lst = entry.runtime_data.data.lists.get(reg_entry.unique_id[len(prefix):])
+    if lst is None:
+        connection.send_error(msg["id"], "not_found", "Esa lista ya no existe en el hub.")
+        return
+    connection.send_result(
+        msg["id"],
+        {
+            "name": lst["name"],
+            "items": [
+                {
+                    "id": i["id"],
+                    "name": i["name"],
+                    "qty": i.get("qty") or "",
+                    "category": i.get("category") or "otros",
+                    "done": bool(i.get("done")),
+                    "recurring": bool(i.get("recurring")),
+                }
+                for i in lst["items"]
             ],
         },
     )
